@@ -12,12 +12,12 @@ struct Word
 
 struct Retset
 {
-   char num[10];
+   int num;
    double r;
 };
 
 void readTrainFile(char *filename, struct Word *words, int *count);
-void readTestFile(char *filename, struct Word *spamWords, struct Retset *retset, char type);
+void readTestFile(char *filename, struct Word *trainWords, int trainCount, struct Retset *retset, char type);
 void calcProbability(struct Word *spamWords, struct Word *hamWords, int spamCount, int hamCount);
 
 int main(int argc, char *argv[])
@@ -40,8 +40,8 @@ int main(int argc, char *argv[])
 
    calcProbability(spamWords, hamWords, spamCount, hamCount);
 
-   readTestFile(testSpamFile, spamWords, spamRetset, 's');
-   readTestFile(testHamFile, spamWords, hamRetset, 'h');
+   readTestFile(testSpamFile, spamWords, spamCount, spamRetset, 's');
+   readTestFile(testHamFile, hamWords, hamCount, hamRetset, 'h');
 
    // printf("%s / %f\n", spamWords[0].word, spamWords[0].p);
    // printf("%s / %f\n", spamWords[1].word, spamWords[1].p);
@@ -54,12 +54,12 @@ int main(int argc, char *argv[])
 void calcProbability(struct Word *spamWords, struct Word *hamWords, int spamCount, int hamCount)
 {
 
-   for (int i = 0; i <= spamCount; i++)
+   for (int i = 0; i < spamCount; i++)
    {
       int hc = 1; // 해당 단어가 햄에 한번도 나오지 않은 경우 확률이 1이 되므로, 초기값을 1로 설정
-      for (int j = 0; j <= hamCount; j++)
+      for (int j = 0; j < hamCount; j++)
       {
-         if (spamWords[i].word == hamWords[j].word)
+         if (!strcmp(spamWords[i].word, hamWords[j].word))
          {
             hc = hamWords[j].count;
             break;
@@ -68,12 +68,29 @@ void calcProbability(struct Word *spamWords, struct Word *hamWords, int spamCoun
       spamWords[i].p = (double)spamWords[i].count / (double)(spamWords[i].count + hc);
       spamWords[i].q = 1 - spamWords[i].p;
    }
+
+   for (int i = 0; i < hamCount; i++)
+   {
+      int sc = 1; // 해당 단어가 햄에 한번도 나오지 않은 경우 확률이 1이 되므로, 초기값을 1로 설정
+      for (int j = 0; j < spamCount; j++)
+      {
+         if (!strcmp(spamWords[i].word, hamWords[j].word))
+         {
+            sc = spamWords[j].count;
+            break;
+         }
+      }
+      hamWords[i].p = (double)hamWords[i].count / (double)(hamWords[i].count + sc);
+      hamWords[i].q = 1 - hamWords[i].p;
+   }
 }
 
-void readTestFile(char *filename, struct Word *spamWords, struct Retset *retset, char type)
+void readTestFile(char *filename, struct Word *trainWords, int trainCount, struct Retset *retset, char type)
 {
    struct Word words[10000] = {0};
    int count = 0;
+   int flag = 0;
+   int num = 1;
    char tok[13];
 
    if (type == 's')
@@ -124,18 +141,53 @@ void readTestFile(char *filename, struct Word *spamWords, struct Retset *retset,
          }
 
          char *ptr = strtok(temp, " ");
+
          while (ptr != NULL)
          {
             // printf("%s", ptr);
             if (count != 0 && !strcmp(tok, ptr))
             {
-               printf(" 요놈 %d\n", count);
+               double pprod = 1.0, qprod = 1.0;
+               int noneCheck = 0;
+               // printf(" -------------------- %d -----------------------\n", flag);
+               for (int i = flag; i < count; i++)
+               {
+                  for (int j = 0; j < trainCount; j++)
+                  {
+                     if (!strcmp(trainWords[j].word, words[i].word))
+                     {
+                        pprod *= trainWords[j].p;
+                        qprod *= trainWords[j].q;
+                        noneCheck = 1;
+                        break;
+                     }
+                  }
+
+                  // printf("%s \n", words[i].word);
+               }
+               if (noneCheck == 0)
+               {
+                  retset[num - 1].r = 0.0;
+               }
+               else
+               {
+                  retset[num - 1].r = pprod / (pprod + qprod);
+               }
+               retset[num - 1].num = num;
+
+               num++;
+
                // if (words[0].count == 0)
                // {
                //    printf("잡았다 요놈\n");
                //    struct Word dummy[10000] = {0};
                //    memcpy(words, dummy, sizeof(dummy));
                // }
+
+               flag = count;
+               // printf(" %d\n", flag);
+               // if (flag == 83)
+               //    return;
                n = 0;
                ptr = strtok(NULL, " ");
                // c1++;
@@ -164,6 +216,10 @@ void readTestFile(char *filename, struct Word *spamWords, struct Retset *retset,
          }
       }
       // printf("%d , %d", c1, c2);
+   }
+   for (int i = 0; i < num - 1; i++)
+   {
+      printf("%c - %d : %.1f%%\n", type, retset[i].num, retset[i].r * 100);
    }
 
    fclose(pFile);
