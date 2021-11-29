@@ -50,7 +50,7 @@ void calcProbability(struct Word *spamWords, struct Word *hamWords, int spamCoun
 
    for (int i = 0; i < spamCount; i++)
    {
-      int hc = 1; // 해당 단어가 햄에 한번도 나오지 않은 경우 확률이 1이 되므로, 초기값을 1로 설정
+      int hc = 1; // If the word has never appeared in the ham, the probability is 1, so the initial value is set to 1.
       for (int j = 0; j < hamCount; j++)
       {
          if (!strcmp(spamWords[i].word, hamWords[j].word))
@@ -65,7 +65,7 @@ void calcProbability(struct Word *spamWords, struct Word *hamWords, int spamCoun
 
    for (int i = 0; i < hamCount; i++)
    {
-      int sc = 1; // 해당 단어가 햄에 한번도 나오지 않은 경우 확률이 1이 되므로, 초기값을 1로 설정
+      int sc = 1; // If the word has never appeared in the ham, the probability is 1, so the initial value is set to 1.
       for (int j = 0; j < spamCount; j++)
       {
          if (!strcmp(spamWords[i].word, hamWords[j].word))
@@ -136,6 +136,7 @@ void readTestFile(char *filename, struct Word *trainWords, int trainCount, struc
 
          while (ptr != NULL)
          {
+
             if (count != 0 && !strcmp(tok, ptr))
             {
                double pprod = 1.0, qprod = 1.0;
@@ -189,11 +190,44 @@ void readTestFile(char *filename, struct Word *trainWords, int trainCount, struc
                ptr = strtok(NULL, " ");
             }
          }
+         if (num == 20)
+         {
+            double pprod = 1.0, qprod = 1.0;
+            int noneCheck = 0;
+            for (int i = flag; i < count; i++)
+            {
+               for (int j = 0; j < trainCount; j++)
+               {
+                  if (!strcmp(trainWords[j].word, words[i].word))
+                  {
+                     pprod *= trainWords[j].p;
+                     qprod *= trainWords[j].q;
+                     noneCheck = 1;
+                     break;
+                  }
+               }
+            }
+            if (noneCheck == 0)
+            {
+               retset[num - 1].r = 0.0;
+            }
+            else
+            {
+               retset[num - 1].r = pprod / (pprod + qprod);
+            }
+            retset[num - 1].num = num;
+            num++;
+
+            flag = count;
+            n = 0;
+            ptr = strtok(NULL, " ");
+         }
       }
    }
+   printf("----------- %s -----------\n", (type == 's') ? "spam" : "ham");
    for (int i = 0; i < num - 1; i++)
    {
-      printf("%c - %d : %.2f%%\n", type, retset[i].num, retset[i].r * 100);
+      printf("%c - %02d : %.3f\n", type, retset[i].num, retset[i].r);
    }
 
    fclose(pFile);
@@ -257,6 +291,7 @@ void readTrainFile(char *filename, struct Word *words, int *count)
                }
                if (n != 1)
                {
+
                   strcpy((words[(*count)]).word, ptr);
                   (words[(*count)]).count++;
                   (*count)++;
