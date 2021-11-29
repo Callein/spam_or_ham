@@ -42,12 +42,6 @@ int main(int argc, char *argv[])
 
    readTestFile(testSpamFile, spamWords, spamCount, spamRetset, 's');
    readTestFile(testHamFile, hamWords, hamCount, hamRetset, 'h');
-
-   // printf("%s / %f\n", spamWords[0].word, spamWords[0].p);
-   // printf("%s / %f\n", spamWords[1].word, spamWords[1].p);
-   // printf("%d\n", hamCount);
-   // printf("%d", spamCount);
-
    return 0;
 }
 
@@ -111,8 +105,6 @@ void readTestFile(char *filename, struct Word *trainWords, int trainCount, struc
    if (pFile != NULL)
    {
       fgets(str_tmp, 1024, pFile);
-      int c1 = 0;
-      int c2 = 0;
       while (!feof(pFile))
       {
          char temp[1024] = {
@@ -144,12 +136,10 @@ void readTestFile(char *filename, struct Word *trainWords, int trainCount, struc
 
          while (ptr != NULL)
          {
-            // printf("%s", ptr);
             if (count != 0 && !strcmp(tok, ptr))
             {
                double pprod = 1.0, qprod = 1.0;
                int noneCheck = 0;
-               // printf(" -------------------- %d -----------------------\n", flag);
                for (int i = flag; i < count; i++)
                {
                   for (int j = 0; j < trainCount; j++)
@@ -162,8 +152,6 @@ void readTestFile(char *filename, struct Word *trainWords, int trainCount, struc
                         break;
                      }
                   }
-
-                  // printf("%s \n", words[i].word);
                }
                if (noneCheck == 0)
                {
@@ -177,24 +165,12 @@ void readTestFile(char *filename, struct Word *trainWords, int trainCount, struc
 
                num++;
 
-               // if (words[0].count == 0)
-               // {
-               //    printf("잡았다 요놈\n");
-               //    struct Word dummy[10000] = {0};
-               //    memcpy(words, dummy, sizeof(dummy));
-               // }
-
                flag = count;
-               // printf(" %d\n", flag);
-               // if (flag == 83)
-               //    return;
                n = 0;
                ptr = strtok(NULL, " ");
-               // c1++;
             }
             else
             {
-               // printf("%s\n", words[0].word);
                for (int i = 0; i <= count; i++)
                {
                   if (!strcmp((words[i]).word, ptr))
@@ -211,15 +187,13 @@ void readTestFile(char *filename, struct Word *trainWords, int trainCount, struc
                }
                n = 0;
                ptr = strtok(NULL, " ");
-               // c2++;
             }
          }
       }
-      // printf("%d , %d", c1, c2);
    }
    for (int i = 0; i < num - 1; i++)
    {
-      printf("%c - %d : %.1f%%\n", type, retset[i].num, retset[i].r * 100);
+      printf("%c - %d : %.2f%%\n", type, retset[i].num, retset[i].r * 100);
    }
 
    fclose(pFile);
